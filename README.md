@@ -51,8 +51,106 @@ This is the only case which may lead to a transaction loose.
 and try to wait for current transactions to be finished before stopping.
 
 ## Getting started ##
+Procedure below let you quickly start to test in a sanbox environment.
+This is assumed that you got your own credentials from be2bill in order to use a sanbox.
 
-## Usage ##
+### Clone project ###
+```
+$> git clone https://github.com/crownedgrouse/be2bill.git
+$> cd be2bill/
+
+```
+
+### Compiling project ###
+For `erlang.mk` users :
+
+```
+$> make
+$> make bootstrap-rel
+```
+
+For `rebar` users :
+
+```
+$> rebar compile
+```
+
+### Create a sandbox configuration ###
+
+```
+$> cd priv/
+$> cp sys.config.dist sys.config
+$> cp production.config.dist production.config
+$> cp sandbox.config.dist  sandbox.config
+$> mv *.config ../rel/
+$> cd ../rel/
+
+```
+Then edit `sandbox.config` (at least) in order to write your credentials to access be2bill's sandbox servers. 
+The same with `production.config` if you are ready to do so.
+
+At same time other configuration parameters can be tuned, see [Configuration]().
+
+### Starting release ###
+For `erlang.mk` users :
+```
+$> make run
+
+--- snip ---
+(all release start stuff)
+--- snip ---
+
+Erlang/OTP 19 [erts-8.1] [source] [smp:2:2] [async-threads:10] [hipe] [kernel-poll:false]
+
+Eshell V8.1  (abort with ^G)
+
+(be2bill@127.0.0.1)1> whereis(production).
+<0.198.0>
+(be2bill@127.0.0.1)2> whereis(sandbox).   
+<0.200.0>
+
+```
+As you can see, each environment is reachable as a name (`production` or `sandbox`).
+Those processes are gen_server where you can perform requests by submitting records.
+
+Note if you are not using release but an interactive shell, simply run : 
+```
+1> application:start(be2bill).
+ok
+```
+but you will need to load the be2bill config by passing start argument to Erlang node, like : `erl -sname test -config priv/sys `
+
+### Testing manually some transactions ###
+
+Once into an Erlang shell of an Erlang node where be2bill application is running, we can do manual transactions.
+To do so, you need to load record definitions that will help you to compose valid be2bill records.
+This is achieved by importing record definition available in `include/` directory.
+
+```
+(be2bill@127.0.0.1)3>
+1> rr("lib/be2bill-X.Y.Z/include/be2bill_defs.hrl").
+[authorization,authorizationOpts,
+ buildAuthorizationFormButton,
+ buildAuthorizationFormButtonOpts,buildPaymentFormButton,
+ buildPaymentFormButtonOpts,capture,captureOpts,
+ exportChargebacks,exportChargebacksOpts,
+ exportReconciledTransactions,
+ exportReconciledTransactionsOpts,exportReconciliation,
+ exportReconciliationOpts,exportTransactions,
+ exportTransactionsOpts,getTransactionsByOrderId,
+ getTransactionsByOrderIdOpts,getTransactionsByTransactionId,
+ getTransactionsByTransactionIdOpts,oneClickAuthorization,
+ oneClickAuthorizationOpts,oneClickPayment,
+ oneClickPaymentOpts,payment,paymentOpts,redirectForPayment,
+ redirectForPaymentOpts,refund|...]
+```
+Note that if all record definitions are not needed, you can load only sub-definitions :
+`be2bill_authorization.hrl`, `be2bill_payment.hrl`, `be2bill_transaction.hrl` .
+
+`be2bill_defs.hrl` is only existing to load these three sub-definitions.
+
+
+## Going further ##
 See [Wiki]() .
 
 
