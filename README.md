@@ -10,7 +10,7 @@ This API is trying to be as close as possible to the [PHP API](https://github.co
 with the notable difference that Erlang is a [functional langage](https://en.wikipedia.org/wiki/Erlang_(programming_language)), 
 and not an Object Oriented langage.
 
-To do so, object are [records](http://erlang.org/doc/reference_manual/records.html), 
+To do so, objects are [records](http://erlang.org/doc/reference_manual/records.html), 
 and class methods are callbacks in [gen_server](http://erlang.org/doc/design_principles/gen_server_concepts.html).
 
 ## Other differences ##
