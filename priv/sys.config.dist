@@ -1,0 +1,6 @@
+[
+{be2bill, [{mode, both}
+          ,"production"
+          ,"sandbox"
+          ]}
+].

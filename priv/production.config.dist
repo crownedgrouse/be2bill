@@ -1,0 +1,8 @@
+% Production environment
+[
+{be2bill, [{production, [{name, {local, production}} 
+                        ,{identifier, "YOUR_PRODUCTION_ID"}
+                        ,{password, "YOUR_PRODUCTION_PASSWORD"}
+                        ]}
+          ]}
+].

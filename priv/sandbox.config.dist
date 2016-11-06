@@ -1,0 +1,8 @@
+% Sandbox environment
+[
+{be2bill, [{sandbox, [{name, {local, sandbox}} 
+                     ,{identifier, "YOUR_SANDBOX_ID"}
+                     ,{password, "YOUR_SANDBOX_PASSWORD"}
+                     ]}
+          ]}
+].
