@@ -30,8 +30,8 @@ in commercial website with lot of transactions.
 ### Git ###
 This project comes with a `.gitignore` file that avoid any commit of configuration
 files potentially containing sensitive be2bill identifiers, either production or sandbox ones. 
-*DO NOT MODIFY OR REMOVE IT* if you fork this project ! keep in mind that if you committed 
-them once, they may be still tracked in the git history.
+*DO NOT MODIFY OR REMOVE IT* if you fork this project ! 
+Keep in mind that if you committed them once, they may be still tracked in the git history.
 Configuration examples are coming with a `.config.dist` extension : *Never edit them*. 
 Simply copy them by removing `.dist` extension and add your credentials there.
 
@@ -127,8 +127,7 @@ To do so, you need to load record definitions that will help you to compose vali
 This is achieved by importing record definition available in `include/` directory.
 
 ```
-(be2bill@127.0.0.1)3>
-1> rr("lib/be2bill-X.Y.Z/include/be2bill_defs.hrl").
+(be2bill@127.0.0.1)3> rr("lib/be2bill-X.Y.Z/include/be2bill_defs.hrl").
 [authorization,authorizationOpts,
  buildAuthorizationFormButton,
  buildAuthorizationFormButtonOpts,buildPaymentFormButton,
