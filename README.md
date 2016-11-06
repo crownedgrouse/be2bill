@@ -144,6 +144,8 @@ This is achieved by importing record definition available in `include/` director
  oneClickPaymentOpts,payment,paymentOpts,redirectForPayment,
  redirectForPaymentOpts,refund|...]
 ```
+(Replace `X.Y.Z` by the be2bill release version you are running.)
+
 Note that if all record definitions are not needed, you can load only sub-definitions :
 `be2bill_authorization.hrl`, `be2bill_payment.hrl`, `be2bill_transaction.hrl` .
 
