@@ -109,7 +109,6 @@ Eshell V8.1  (abort with ^G)
 <0.198.0>
 (be2bill@127.0.0.1)2> whereis(sandbox).   
 <0.200.0>
-
 ```
 As you can see, each environment is reachable as a name (`production` or `sandbox`).
 Those processes are gen_server where you can perform requests by submitting records.

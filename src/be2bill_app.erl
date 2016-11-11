@@ -30,6 +30,7 @@
 -export([stop/1]).
 
 start(_Type, _Args) ->
+   application:start(crypto),
 	be2bill_sup:start_link().
 
 stop(_State) ->
