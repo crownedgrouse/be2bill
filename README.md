@@ -21,15 +21,16 @@ that handles all the [be2bill logic](https://developer.be2bill.com/platform)
 
 This let the Erlang coder to concentrate on only the business logic in 
 its own code, with a "fire and forget" approach, and having the insurance that 
-_almost_ no transactions (see security paragraph hereafter) will be lost.
+_almost_ no transactions will be lost (see security paragraph hereafter).
 
 This project propose also some extra things, like metrics which can be usefull 
-in commercial website with lot of transactions.
+for commercial website dealing with lot of transactions.
 
 ## Security aspects ##
 ### Git ###
-This project comes with a `.gitignore` file that avoid any commit of configuration
-files potentially containing sensitive be2bill identifiers, either production or sandbox ones. 
+This project comes with a `.gitignore` file that avoid any commit of `.config` configuration
+files potentially containing sensitive be2bill identifiers, either production or sandbox ones.
+(But this does not protect againt `-f` git argument however !) 
 *DO NOT MODIFY OR REMOVE IT* if you fork this project ! 
 Keep in mind that if you committed them once, they may be still tracked in the git history.
 Configuration examples are coming with a `.config.dist` extension : *Never edit them*. 
@@ -150,6 +151,20 @@ Note that if all record definitions are not needed, you can load only sub-defini
 
 `be2bill_defs.hrl` is only existing to load these three sub-definitions.
 
+Submit a request is then simple as :
+```
+(be2bill@127.0.0.1)4> A = #payment{'ORDERID'="000123", 'DESCRIPTION'="art_123456", 'AMOUNT' = 1000, 'CLIENTID'="client_123"}.   
+#payment{'CARDPAN' = undefined,'CARDDATE' = undefined,
+         'CARDCRYPTOGRAM' = undefined,'CARDFULLNAME' = undefined,
+         'AMOUNT' = 1000,'ORDERID' = "000123",
+         'CLIENTID' = "client_123",'CLIENTEMAIL' = undefined,
+         'CLIENTIP' = undefined,'DESCRIPTION' = "art_123456",
+         'CLIENTUSERAGENT' = undefined,htmlOpts = undefined,
+         opts = undefined}
+(be2bill@127.0.0.1)5> gen_server:call(sandbox, A).
+ok
+```
+Same thing for production, except that calls have to be done on `production` gen_server.
 
 ## Going further ##
 See [Wiki]() .
