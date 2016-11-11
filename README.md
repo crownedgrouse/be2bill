@@ -90,7 +90,7 @@ $> cd ../rel/
 Then edit `sandbox.config` (at least) in order to write your credentials to access be2bill's sandbox servers. 
 The same with `production.config` if you are ready to do so.
 
-At same time other configuration parameters can be tuned, see [Configuration]().
+At same time other configuration parameters can be tuned, see [Configuration](https://github.com/crownedgrouse/be2bill/wiki/Configuration).
 
 ### Starting release ###
 For `erlang.mk` users :
@@ -166,7 +166,7 @@ ok
 Same thing for production, except that calls have to be done on `production` gen_server.
 
 ## Going further ##
-See [Wiki]() .
+See [Wiki](https://github.com/crownedgrouse/be2bill/wiki) .
 
 
 
