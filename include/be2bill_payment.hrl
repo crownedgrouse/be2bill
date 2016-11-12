@@ -37,7 +37,7 @@
 -record('buildPaymentFormButton',
 {'AMOUNT' 	:: non_neg_integer() | list()
 ,'ORDERID'  :: string()           % uniq number on merchand website
-,'CLIENTID'	:: string()           % string 255 maximum
+,'CLIENTIDENT'	:: string()           % string 255 maximum
 ,'DESCRIPTION' 	:: string()     % string 510 maximum
 ,'htmlOpts' :: undefined | string()     
 ,'opts'     :: undefined | #buildPaymentFormButtonOpts{}   	
@@ -101,7 +101,7 @@
 {'ALIAS'              :: string()
 ,'AMOUNT'             :: non_neg_integer() | list()
 ,'ORDERID'            :: string()
-,'CLIENTID'           :: string()
+,'CLIENTIDENT'        :: string()
 ,'CLIENTEMAIL'        :: string()
 ,'CLIENTIP'           :: string()
 ,'DESCRIPTION'        :: string()
@@ -136,7 +136,7 @@
 {'ALIAS'                       :: string()
 ,'AMOUNT'                      :: non_neg_integer() | list()
 ,'ORDERID'                     :: string()
-,'CLIENTID'                    :: string()
+,'CLIENTIDENT'                 :: string()
 ,'CLIENTEMAIL'                 :: string()
 ,'CLIENTIP'                    :: string()
 ,'DESCRIPTION'                 :: string()
@@ -170,7 +170,7 @@
 {'ALIAS'                       :: string()
 ,'AMOUNT'                      :: non_neg_integer() | list()
 ,'ORDERID'                     :: string()
-,'CLIENTID'                    :: string()
+,'CLIENTIDENT'                 :: string()
 ,'CLIENTEMAIL'                 :: string()
 ,'CLIENTIP'                    :: string()
 ,'DESCRIPTION'                 :: string()
@@ -211,7 +211,7 @@
 ,'CARDFULLNAME'               :: string()
 ,'AMOUNT'                     :: non_neg_integer() | list()
 ,'ORDERID'                    :: string()
-,'CLIENTID'                   :: string()
+,'CLIENTIDENT'                :: string()
 ,'CLIENTEMAIL'                :: string()
 ,'CLIENTIP'                   :: string()
 ,'DESCRIPTION'                :: string()

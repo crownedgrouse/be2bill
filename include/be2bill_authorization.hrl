@@ -35,7 +35,7 @@
 -record('buildAuthorizationFormButton',
 {'AMOUNT' 	      :: non_neg_integer() | list()
 ,'ORDERID'        :: string()     % uniq order id on merchand website
-,'CLIENTID'	      :: string()     % uniq client id on merchand website
+,'CLIENTIDENT'	   :: string()     % uniq client id on merchand website
 ,'DESCRIPTION' 	:: string()     % string 510 maximum
 ,'htmlOpts'       :: undefined | string()     
 ,'opts'           :: undefined | #buildAuthorizationFormButtonOpts{}   
@@ -73,7 +73,7 @@
 {'ALIAS'                       :: string()
 ,'AMOUNT'                      :: non_neg_integer() | list()
 ,'ORDERID'                     :: string()
-,'CLIENTID'                    :: string()
+,'CLIENTIDENT'                 :: string()
 ,'CLIENTEMAIL'                 :: string()
 ,'CLIENTIP'                    :: string()
 ,'DESCRIPTION'                 :: string()
@@ -108,7 +108,7 @@
 {'ALIAS'                       :: string()
 ,'AMOUNT'                      :: non_neg_integer() | list()
 ,'ORDERID'                     :: string()
-,'CLIENTID'                    :: string()
+,'CLIENTIDENT'                 :: string()
 ,'CLIENTEMAIL'                 :: string()
 ,'CLIENTIP'                    :: string()
 ,'DESCRIPTION'                 :: string()
@@ -149,7 +149,7 @@
 ,'CARDFULLNAME'               :: string()
 ,'AMOUNT'                     :: non_neg_integer() | list()
 ,'ORDERID'                    :: string()
-,'CLIENTID'                   :: string()
+,'CLIENTIDENT'                :: string()
 ,'CLIENTEMAIL'                :: string()
 ,'CLIENTIP'                   :: string()
 ,'DESCRIPTION'                :: string()

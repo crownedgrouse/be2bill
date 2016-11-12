@@ -334,7 +334,7 @@ check_spec('CLIENTEMAIL') ->
     {ereg, "^.{1,255}$"};
 check_spec('CLIENTGENDER') -> 
 	 skip ;
-check_spec('CLIENTID') -> 
+check_spec('CLIENTIDENT') -> 
     {ereg, "^.{1,255}$"};
 check_spec('CLIENTIP') -> 
     {ereg, "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$"};
