@@ -35,12 +35,13 @@
 }).
 
 -record('buildPaymentFormButton',
-{'AMOUNT' 	:: non_neg_integer() | list()
-,'ORDERID'  :: string()           % uniq number on merchand website
-,'CLIENTIDENT'	:: string()           % string 255 maximum
+{'VERSION'= "2.0" :: string()
+,'AMOUNT' 	      :: non_neg_integer() | list()
+,'ORDERID'        :: string()           % uniq number on merchand website
+,'CLIENTIDENT'	   :: string()           % string 255 maximum
 ,'DESCRIPTION' 	:: string()     % string 510 maximum
-,'htmlOpts' :: undefined | string()     
-,'opts'     :: undefined | #buildPaymentFormButtonOpts{}   	
+,'htmlOpts'       :: undefined | string()     
+,'opts'           :: undefined | #buildPaymentFormButtonOpts{}   	
 }).
 
 %%******************************************************************************
@@ -51,10 +52,11 @@
 }).
 
 -record('capture',
-{'TRANSACTIONID' :: string()  % Non empty string
-,'ORDERID'       :: string()  % Non empty string
-,'DESCRIPTION'   :: string()  % Optionally empty string < 511 chars
-,'opts'          :: undefined | #captureOpts{}   % Optional record
+{'VERSION'= "2.0" :: string()
+,'TRANSACTIONID'  :: string()  % Non empty string
+,'ORDERID'        :: string()  % Non empty string
+,'DESCRIPTION'    :: string()  % Optionally empty string < 511 chars
+,'opts'           :: undefined | #captureOpts{}   % Optional record
 }).
 
 %%******************************************************************************
@@ -65,10 +67,11 @@
 }).
 
 -record('refund',
-{'TRANSACTIONID' :: string()                     % Non empty string
-,'ORDERID'       :: string()                     % Non empty string
-,'DESCRIPTION'   :: string()                     % Optionally empty string < 511 chars
-,'opts'          :: undefined | #captureOpts{}   % Optional record
+{'VERSION'= "2.0" :: string()
+,'TRANSACTIONID'  :: string()                     % Non empty string
+,'ORDERID'        :: string()                     % Non empty string
+,'DESCRIPTION'    :: string()                     % Optionally empty string < 511 chars
+,'opts'           :: undefined | #captureOpts{}   % Optional record
 }).
 
 %%******************************************************************************
@@ -98,7 +101,8 @@
 }).
 
 -record('oneClickPayment',
-{'ALIAS'              :: string()
+{'VERSION'= "2.0"     :: string()
+,'ALIAS'              :: string()
 ,'AMOUNT'             :: non_neg_integer() | list()
 ,'ORDERID'            :: string()
 ,'CLIENTIDENT'        :: string()
@@ -133,7 +137,8 @@
 }).
 
 -record('subscriptionPayment',
-{'ALIAS'                       :: string()
+{'VERSION'= "2.0"              :: string()
+,'ALIAS'                       :: string()
 ,'AMOUNT'                      :: non_neg_integer() | list()
 ,'ORDERID'                     :: string()
 ,'CLIENTIDENT'                 :: string()
@@ -167,7 +172,8 @@
 }).
 
 -record('redirectForPayment',
-{'ALIAS'                       :: string()
+{'VERSION'= "2.0"              :: string()
+,'ALIAS'                       :: string()
 ,'AMOUNT'                      :: non_neg_integer() | list()
 ,'ORDERID'                     :: string()
 ,'CLIENTIDENT'                 :: string()
@@ -205,7 +211,8 @@
 
 
 -record('payment',
-{'CARDPAN'                    :: non_neg_integer()
+{'VERSION'= "2.0"             :: string()
+,'CARDPAN'                    :: non_neg_integer()
 ,'CARDDATE'                   :: string()
 ,'CARDCRYPTOGRAM'             :: non_neg_integer()
 ,'CARDFULLNAME'               :: string()
@@ -223,6 +230,7 @@
 %%******************************************************************************
 %% Record definition for stopNTimes
 -record('stopNTimes',
-{'SCHEDULEID'                       :: string()
+{'VERSION'= "2.0"                   :: string()
+,'SCHEDULEID'                       :: string()
 }).
 

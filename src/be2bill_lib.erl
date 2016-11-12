@@ -414,8 +414,8 @@ check_spec('TRANSACTIONID') ->
     {ereg, "^.{1,32}$"};
 check_spec('USETEMPLATE') -> 
 	 skip ;
-check_spec('VERSION') -> % TODO
-	 todo ;
+check_spec('VERSION') -> 
+	 skip ;
 check_spec('VME') -> % TODO
 	 todo ;
 check_spec('opts') ->

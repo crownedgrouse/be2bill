@@ -33,7 +33,8 @@
 }).
 
 -record('buildAuthorizationFormButton',
-{'AMOUNT' 	      :: non_neg_integer() | list()
+{'VERSION'= "2.0" :: string()
+,'AMOUNT' 	      :: non_neg_integer() | list()
 ,'ORDERID'        :: string()     % uniq order id on merchand website
 ,'CLIENTIDENT'	   :: string()     % uniq client id on merchand website
 ,'DESCRIPTION' 	:: string()     % string 510 maximum
@@ -70,7 +71,8 @@
 }).
 
 -record('oneClickAuthorization',
-{'ALIAS'                       :: string()
+{'VERSION'= "2.0"              :: string()
+,'ALIAS'                       :: string()
 ,'AMOUNT'                      :: non_neg_integer() | list()
 ,'ORDERID'                     :: string()
 ,'CLIENTIDENT'                 :: string()
@@ -105,7 +107,8 @@
 }).
 
 -record('subscriptionAuthorization',
-{'ALIAS'                       :: string()
+{'VERSION'= "2.0"              :: string()
+,'ALIAS'                       :: string()
 ,'AMOUNT'                      :: non_neg_integer() | list()
 ,'ORDERID'                     :: string()
 ,'CLIENTIDENT'                 :: string()
@@ -143,7 +146,8 @@
 }).
 
 -record('authorization',
-{'CARDPAN'                    :: non_neg_integer()
+{'VERSION'= "2.0"             :: string()
+,'CARDPAN'                    :: non_neg_integer()
 ,'CARDDATE'                   :: string()
 ,'CARDCRYPTOGRAM'             :: non_neg_integer()
 ,'CARDFULLNAME'               :: string()
