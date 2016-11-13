@@ -47,7 +47,7 @@
 
 -record(state, 
 {next   = undefined :: undefined | ip_address() % the server to be tried next time
-,server = undefined :: undefined | ip_address() % the current server being tried
+,server = undefined :: undefined | ip_address() % the last server being tried
 ,tries  = 0   :: non_neg_integer()              % current number of tries
 ,status = 0   :: non_neg_integer()              % Http code received
 ,main   = []  :: list()                         % list of main system IPs
@@ -73,7 +73,12 @@ init(Env) ->
             _            -> false 
          end,
    erlang:process_flag(sensitive, Sec),
-	{ok, prepare, #state{}}.
+   % Compute list of IP available (dynamic as far we can change this at runtime)
+   Envs      = application:get_env(be2bill, Env, []),
+   MainIps   = proplists:get_value('main_pool', Envs, []),
+   BackupIps = proplists:get_value('backup_pool', Envs, []),
+   Next      = server_pick(MainIps),
+	{ok, prepare, #state{next=Next, main=MainIps, backup=BackupIps}}.
 
 %%------------------------------------------------------------------------------
 %% Each http request will be handled by an individual gen_fsm.
@@ -143,3 +148,9 @@ terminate(_Reason, _StateName, _StateData) ->
 
 code_change(_OldVsn, StateName, StateData, _Extra) ->
 	{ok, StateName, StateData}.
+
+%===============================================================================
+
+server_pick(L) -> lists:sublist(L, rand:uniform(length(L)), 1).
+
+

@@ -1,5 +1,5 @@
 [
-{be2bill, [{mode, both}
+{be2bill, [{env, both}   % both, production, sandbox
           ,"production"
           ,"sandbox"
           ]}

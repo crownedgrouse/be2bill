@@ -153,7 +153,7 @@ Note that if all record definitions are not needed, you can load only sub-defini
 Submit a request is then simple as :
 ```
 (be2bill@127.0.0.1)4> A = #payment{'ORDERID'="000123", 'DESCRIPTION'="art_123456", 'AMOUNT' = 1000, 'CLIENTIDENT'="client_123"}.   
-#payment{'CARDPAN' = undefined,'CARDDATE' = undefined,
+#payment{'VERSION' = "2.0",'CARDPAN' = undefined,'CARDDATE' = undefined,
          'CARDCRYPTOGRAM' = undefined,'CARDFULLNAME' = undefined,
          'AMOUNT' = 1000,'ORDERID' = "000123",
          'CLIENTIDENT' = "client_123",'CLIENTEMAIL' = undefined,

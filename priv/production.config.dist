@@ -3,6 +3,10 @@
 {be2bill, [{production, [{name, {local, production}} 
                         ,{identifier, "YOUR_PRODUCTION_ID"}
                         ,{password, "YOUR_PRODUCTION_PASSWORD"}
+                        ,{main_pool, ["80.70.210.64/27", "80.70.213.64/27", "80.70.216.64/27", "80.70.217.64/27"]}
+                        ,{main_url, ""}
+                        ,{backup_pool, []}
+                        ,{backup_url, ""}
                         ]}
           ]}
 ].
