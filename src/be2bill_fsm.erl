@@ -108,10 +108,7 @@ init(Env) ->
 %% at same time.
 %%------------------------------------------------------------------------------
 prepare(Data, StateData) ->
-   Env = application:get_env(be2bill, get(env), []),
-   Password = proplists:get_value('password', Env, ""),
-   {ok, Post}     = be2bill_lib:compute_post(Data, Password),
-	{next_state, main, StateData#state{post=Post}}.
+	{next_state, main, StateData#state{post=Data}}.
 
 main(_Event, StateData) ->
    NextState = todo,
@@ -127,11 +124,8 @@ handle_event('try', StateName, StateData) ->
 	{next_state, StateName, StateData}.
 
 prepare(Data, _From, StateData) ->
-   Env = application:get_env(be2bill, get(env), []),
-   Password = proplists:get_value('password', Env, ""),
-   {ok, Post}     = be2bill_lib:compute_post(Data, Password),
    gen_fsm:send_all_state_event(self(), 'try'),
-	{reply, ok, main, StateData#state{post=Post}}.
+	{reply, ok, main, StateData#state{post=Data}}.
 
 main({timeout, _, _}, _From, StateData) ->
 	{reply, ignored, main, StateData};

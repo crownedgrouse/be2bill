@@ -68,13 +68,20 @@
 -define(INC_STATE(S, R), S{R = ( S.R + 1)}).
 
 % Common treatment to all methods
--define(COMMON(R),
+-define(COMMON(R, Store),
     
          case be2bill_lib:check_record(R) of
               {error, Err} -> {error, Err} ;
-              {ok, Ok}     -> % Add dynamic http fsm to handle the request
+              {ok, Ok}     -> 
+                              % Add dynamic http fsm to handle the request
                               {ok, Child} = supervisor:start_child(get(httpfsm), []),
-                              gen_fsm:sync_send_event(Child, Ok)
+                              Password = get('password'),
+                              {ok, Post} = be2bill_lib:compute_post(Ok, Password),
+                              case Store of
+                                    true -> true = dets:insert_new(get(store), { erlang:phash2(Post), Post}) ;
+                                    _    -> ok
+                              end,
+                              gen_fsm:sync_send_event(Child, Post)
         end
 ).
 
@@ -117,6 +124,21 @@ init(Env) ->
                update_config(Env),
                {ok, HttpFsm} = supervisor:start_link(Name, be2bill_simplesup, [Env]),
                put(httpfsm, HttpFsm), %  Store PID
+               % Open dets disc store (in priv/ directory if not set)
+               DetsDir = application:get_env(be2bill, vault, code:priv_dir('be2bill')),
+               case dets:open_file(filename:join(DetsDir, atom_to_list(Env) ++ ".dets"), []) of
+                    {ok, Reference}  -> 
+                         put(store, Reference),
+                         % Resume stored requests (unfinished) TODO logging that some request are resumed
+                         dets:traverse(Reference, 
+                                       fun({Key, Post}) -> 
+                                          {ok, Child} = supervisor:start_child(get(httpfsm), []),
+                                          gen_fsm:sync_send_event(Child, Post), 
+                                          io:format("Resuming uncommited transaction : ~p~n",[Key]),
+                                          continue end) ;
+                    {error, _Reason} -> % TODO logging
+                                        ok
+               end,
                {ok, #state{}};
       _    -> ignore
    end.
@@ -147,7 +169,7 @@ handle_call('metrics', _From, State)
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'buildPaymentFormButton') 
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'buildPaymentFormButton') };
 %%------------------------------------------------------------------------------
 %%  buildAuthorizationFormButton
@@ -158,7 +180,7 @@ handle_call(Req, _From, State) when is_record(Req, 'buildPaymentFormButton')
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'buildAuthorizationFormButton') 
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'buildAuthorizationFormButton')};
 %%------------------------------------------------------------------------------
 %%  capture
@@ -170,7 +192,7 @@ handle_call(Req, _From, State) when is_record(Req, 'buildAuthorizationFormButton
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'capture')
 	->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'capture')};
 
 %%------------------------------------------------------------------------------
@@ -183,7 +205,7 @@ handle_call(Req, _From, State) when is_record(Req, 'capture')
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'refund')
 	->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'refund')};
 
 %%------------------------------------------------------------------------------
@@ -196,7 +218,7 @@ handle_call(Req, _From, State) when is_record(Req, 'refund')
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'oneClickPayment')
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'oneClickPayment')};
 
 %%------------------------------------------------------------------------------
@@ -210,7 +232,7 @@ handle_call(Req, _From, State) when is_record(Req, 'oneClickPayment')
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'oneClickAuthorization')
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'oneClickAuthorization')};
 
 %%------------------------------------------------------------------------------
@@ -223,7 +245,7 @@ handle_call(Req, _From, State) when is_record(Req, 'oneClickAuthorization')
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'subscriptionPayment')
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'subscriptionPayment')};
 
 %%------------------------------------------------------------------------------
@@ -237,7 +259,7 @@ handle_call(Req, _From, State) when is_record(Req, 'subscriptionPayment')
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'subscriptionAuthorization')
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'subscriptionAuthorization')};
 
 %%------------------------------------------------------------------------------
@@ -248,7 +270,7 @@ handle_call(Req, _From, State) when is_record(Req, 'subscriptionAuthorization')
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'redirectForPayment')
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'redirectForPayment')};
 
 %%------------------------------------------------------------------------------
@@ -259,7 +281,7 @@ handle_call(Req, _From, State) when is_record(Req, 'redirectForPayment')
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'stopNTimes') 
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'stopNTimes')};
 
 %%------------------------------------------------------------------------------
@@ -273,9 +295,19 @@ handle_call(Req, _From, State) when is_record(Req, 'stopNTimes')
 %%  the result in the request return.
 %%      https://developer.be2bill.com/functions/payment
 %%------------------------------------------------------------------------------
+% DO NO STORE SENSITIVE REQUEST
+handle_call(Req, _From, State) when is_record(Req, 'payment'),
+                                    ((Req#payment.'CARDPAN' =/= undefined) or
+                                     (Req#payment.'CARDCRYPTOGRAM' =/= undefined) or
+                                     (Req#payment.'CARDDATE' =/= undefined) or
+                                     (Req#payment.'CARDFULLNAME' =/= undefined) )
+   ->
+				Reply = ?COMMON(Req, false), 
+	{reply,Reply, ?INC_STATE(State#state, 'payment')};
+% USING AN ALIAS CAN BE STORED
 handle_call(Req, _From, State) when is_record(Req, 'payment') 
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'payment')};
 
 %%------------------------------------------------------------------------------
@@ -291,7 +323,7 @@ handle_call(Req, _From, State) when is_record(Req, 'payment')
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'authorization')  
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'authorization')};
 
 %%------------------------------------------------------------------------------
@@ -301,7 +333,7 @@ handle_call(Req, _From, State) when is_record(Req, 'authorization')
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'getTransactionsByOrderId') 
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'getTransactionsByOrderId')};
 
 %%------------------------------------------------------------------------------
@@ -311,7 +343,7 @@ handle_call(Req, _From, State) when is_record(Req, 'getTransactionsByOrderId')
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'getTransactionsByTransactionId') 
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'getTransactionsByTransactionId')};
 
 %%------------------------------------------------------------------------------
@@ -321,7 +353,7 @@ handle_call(Req, _From, State) when is_record(Req, 'getTransactionsByTransaction
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'exportTransactions') 
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'exportTransactions')};
 
 %%------------------------------------------------------------------------------
@@ -331,7 +363,7 @@ handle_call(Req, _From, State) when is_record(Req, 'exportTransactions')
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State)  when is_record(Req, 'exportChargebacks') 
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'exportChargebacks')};
 
 %%------------------------------------------------------------------------------
@@ -341,7 +373,7 @@ handle_call(Req, _From, State)  when is_record(Req, 'exportChargebacks')
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'exportReconciliation')
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'exportReconciliation')};
 
 %%------------------------------------------------------------------------------
@@ -351,7 +383,7 @@ handle_call(Req, _From, State) when is_record(Req, 'exportReconciliation')
 %%------------------------------------------------------------------------------
 handle_call(Req, _From, State) when is_record(Req, 'exportReconciledTransactions')
    ->
-				Reply = ?COMMON(Req), 
+				Reply = ?COMMON(Req, true), 
 	{reply,Reply, ?INC_STATE(State#state, 'exportReconciledTransactions')};
 %%------------------------------------------------------------------------------
 %% Last resort callback : Unknown/invalid calls return error 
@@ -371,6 +403,8 @@ handle_info(_Info, State) ->
 
 %%******************************************************************************
 terminate(_Reason, _State) ->
+   dets:sync(get(store)),
+   dets:close(get(store)),
 	ok.
 
 %%******************************************************************************
@@ -382,6 +416,13 @@ code_change(_OldVsn, State, _Extra) ->
 
 update_config(Env) when is_atom(Env)-> 
     Envs = application:get_env(be2bill, Env, []),
+    % Store locally, and hide password
+    Password = proplists:get_value('password', Envs, ""),
+    put('password', Password),
+    New = proplists:delete('password', Envs),
+    application:set_env(be2bill, Env, New ++ [{'password', "*********"}]),
+    Id  = proplists:get_value('identifier', Envs, ""),
+    put('identifier', Id),
     % Create main_servers/backup_servers list config   
     MainPool       = proplists:get_value('main_pool', Envs, []),
     BackupPool     = proplists:get_value('backup_pool', Envs, []),
