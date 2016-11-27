@@ -102,4 +102,36 @@ ip_to_int({A,B,C,D}) ->
 int_to_ip(Ip) when is_integer(Ip),(Ip > -1) -> 
       {Ip bsr 24, (Ip band 16711680) bsr 16, (Ip band 65280) bsr 8, Ip band 255}.
 
+%%------------------------------------------------------------------------------
+%% @doc Perform https request
+%%      H  = Host
+%%      U  = URL part (from Document root) i.e https://host/ <- from there
+%%      P  = Post data  (not URL encoded !)
+%%      HO = HTTP Options (see http://erlang.org/doc/man/httpc.html#request-4)
+%%      O  = Options (http://erlang.org/doc/man/httpc.html#request-4)
+%% @end
+%%------------------------------------------------------------------------------
+-spec https_request(tuple() | list(), list(), list(), list(), list()) -> {ok, any()} | {error, any()} .
+
+https_request(H, U, P, HO, O) when is_tuple(H) -> 
+      case inet:ntoa(H) of
+           {error, R}       -> {error, R} ;
+           HS               -> https_request(HS, U, P, HO, O)
+      end;
+
+
+https_request(H, U, P, HO, O) when is_list(H),
+                                   is_list(U), 
+                                   is_list(P), 
+                                   is_list(HO), 
+                                   is_list(O) -> 
+      case httpc:request(post, 
+                        {"https://" ++ H ++ "/" ++ U, [], 
+                        "application/x-www-form-urlencoded",
+                        P}, HO, O) of
+            {ok, saved_to_file}  -> {ok, ""} ;
+            {ok, Result}         -> {ok, Result} ;
+            {error, Reason}      -> {error, Reason}           
+      end.
+
 

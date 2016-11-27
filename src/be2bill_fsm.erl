@@ -50,10 +50,12 @@
 ,server = undefined :: undefined | ip_address() % the last server being tried
 ,tries  = 0   :: non_neg_integer()              % current number of tries
 ,status = 0   :: non_neg_integer()              % Http code received
-,main   = []  :: list()                         % list of main system IPs
-,backup = []  :: list()                         % list of backup system IPs
 ,path         :: string()                       % path part of url
 ,post         :: string()                       % data to post
+,http_options = [] :: list()                    % Http options
+,options      = [] :: list()                    % Options
+,main         = [] :: list()
+,backup       = [] :: list()
 }).
 
 %% API.
@@ -63,7 +65,9 @@ start_link(Env) ->
 	gen_fsm:start_link(?MODULE, Env, []).
 
 %% gen_fsm.
-
+%%------------------------------------------------------------------------------
+%% 
+%%------------------------------------------------------------------------------
 init(Env) ->
    put(env, Env),
    % Disable any tracing/debugging of this process when production mode
@@ -75,10 +79,13 @@ init(Env) ->
    erlang:process_flag(sensitive, Sec),
    % Compute list of IP available (dynamic as far we can change this at runtime)
    Envs      = application:get_env(be2bill, Env, []),
-   MainIps   = proplists:get_value('main_pool', Envs, []),
-   BackupIps = proplists:get_value('backup_pool', Envs, []),
+   NetEnv    = application:get_env(be2bill, list_to_atom(atom_to_list(Env) ++ "_net" ),[]),
+   MainIps   = proplists:get_value('main_servers', NetEnv, []),
+   BackupIps = proplists:get_value('backup_servers', NetEnv, []),
    Next      = server_pick(MainIps),
-	{ok, prepare, #state{next=Next, main=MainIps, backup=BackupIps}}.
+   HO        = proplists:get_value('http_options', Envs, []),
+   O         = proplists:get_value('req_options', Envs, []),
+	{ok, prepare, #state{next=Next, http_options=HO, options=O, main=MainIps, backup=BackupIps}}.
 
 %%------------------------------------------------------------------------------
 %% Each http request will be handled by an individual gen_fsm.

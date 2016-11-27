@@ -114,6 +114,7 @@ init(Env) ->
                            'production' -> {local, prod_fsm_sup} ;
                            _            -> {local, sand_fsm_sup} 
                       end,
+               update_config(Env),
                {ok, HttpFsm} = supervisor:start_link(Name, be2bill_simplesup, [Env]),
                put(httpfsm, HttpFsm), %  Store PID
                {ok, #state{}};
@@ -375,3 +376,18 @@ terminate(_Reason, _State) ->
 %%******************************************************************************
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
+
+
+%%==============================================================================
+
+update_config(Env) when is_atom(Env)-> 
+    Envs = application:get_env(be2bill, Env, []),
+    % Create main_servers/backup_servers list config   
+    MainPool       = proplists:get_value('main_pool', Envs, []),
+    BackupPool     = proplists:get_value('backup_pool', Envs, []),
+    MainServers    = be2bill_netlib:pool2ips(MainPool),
+    BackupServers  = be2bill_netlib:pool2ips(BackupPool),
+    % Set Ips per environment in config at runtime
+    ok= application:set_env(be2bill, list_to_atom(atom_to_list(Env) ++ "_net" ) , [{main_servers, MainServers}, {backup_servers, BackupServers}]),
+
+    ok.

@@ -31,6 +31,8 @@
 
 start(_Type, _Args) ->
    application:start(crypto),
+   ssl:start(),
+   application:start(inets),
 	be2bill_sup:start_link().
 
 stop(_State) ->
