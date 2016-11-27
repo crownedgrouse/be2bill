@@ -23,6 +23,10 @@ This let the Erlang coder to concentrate on only the business logic in
 its own code, with a "fire and forget" approach, and having the insurance that 
 _almost_ no transactions will be lost (see security paragraph hereafter).
 
+On contrary of PHP API, the web developper(s) do not need to manipulate, and even know, the credentials to do requests.
+Those ones are handled by the be2bill application, from configuration.
+The web developper just have to do requests on right environment (production or sandbox). 
+
 This project propose also some extra things, like metrics which can be usefull 
 for commercial website dealing with lot of transactions.
 
@@ -44,12 +48,18 @@ at creation, and therefore cannot be traced or observed at runtime.
 This is *not* the case for sandbox environment processes, for debugging purpose, 
 you are aware. 
 
-Only non sensitive requests are stored on disk until they are commited.
+Only non sensitive requests (*) are stored on disk until they are commited.
 So in case of a brutal machine crash, all pending transactions, but sensitive ones,
 will be hopefully resumed at next start. 
 This is the only case which may lead to a transaction loose.
 `be2bill` application being stopped will refuse new transactions, 
 and try to wait for current transactions to be finished before stopping.
+
+As well, be2bill passwords in application environment variables, are hidden by stars at application start,
+in order to avoid (un)voluntary display on web site by web developpers.
+
+(*) Requests that do not manipulate credit card numbers. 
+Payments using an alias are non sensitive, and therefore, are stored on disc.
 
 ## Getting started ##
 Procedure below let you quickly start to test in a sanbox environment.
