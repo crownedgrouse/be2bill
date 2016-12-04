@@ -85,6 +85,14 @@ init(Env) ->
    Next      = server_pick(MainIps),
    HO        = proplists:get_value('http_options', Envs, []),
    O         = proplists:get_value('req_options', Envs, []),
+   GS        = case proplists:get_value('name', Envs, Env) of
+                    {local , Name} -> Name ;
+                    {global, Name} -> Name 
+               end,
+   put(gs, GS), % My associated gen_server
+   put(hbw,proplists:get_value('http_basic_wait',   Envs, application:get_env(be2bill, 'http_basic_wait'  , 5))),
+   put(hrw,proplists:get_value('http_random_wait',  Envs, application:get_env(be2bill, 'http_random_wait',  2))),
+   put(hrs,proplists:get_value('http_random_scale', Envs, application:get_env(be2bill, 'http_random_scale', {1, 5}))),
 	{ok, prepare, #state{next=Next, http_options=HO, options=O, main=MainIps, backup=BackupIps}}.
 
 %%------------------------------------------------------------------------------
@@ -96,41 +104,49 @@ init(Env) ->
 %% going on current invalid one.
 %% The goal is to drain the quickest way pending requests, but avoid overload,
 %% either locally or at server side, by using a random retry delay.
-%%       Config parameters
-%% http_retries      : number of tries on same system (main / backup), then switch.
-%% http_basic_wait   : basic wait time
-%% http_random_wait  : basic random wait time 
-%% http_random_scale : random scale tuple  ex : {1,5} 
-%% 
-%% Timeout will be computed this way : 
-%% http_basic_wait + (http_random_wait * rand(http_random_scale))
-%% A randomly computed timeout avoid wave effects with huge number of requests
-%% at same time.
 %%------------------------------------------------------------------------------
+% Asynchronous 
 prepare(Data, StateData) ->
-	{next_state, main, StateData#state{post=Data}}.
+	{next_state, main, StateData#state{post=Data}, 10}.
+
 
 main(_Event, StateData) ->
-   NextState = todo,
-	{next_state, NextState, StateData}.
+   % Try to post
+   io:format("Trying req : ~p on ~p~n",[erlang:phash2(StateData#state.post),StateData#state.next]),% TODO gen_even log
+   % random ok or ko
+   case ( rand:uniform() > 0.9  ) of % similate retries for now TODO
+                     true  -> io:format("OK     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
+                              {stop, normal, StateData} ;
+                     false -> io:format("KO     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
+                              NewStateData = StateData#state{next=server_pick(StateData#state.main)},
+	                           {next_state, main, NewStateData, sleep_time()}
+   end.
 
 backup(_Event, StateData) ->
    NextState = todo,
 	{next_state, NextState, StateData}.
 
-%
-handle_event('try', StateName, StateData) ->
-   % Perform https request and select next state depending result
-	{next_state, StateName, StateData}.
+% Synchonous 
+handle_event(Event, StateName, StateData) ->
+   io:format("~p received : ~p~n",[self(), Event]),
+   {next_state, StateName, StateData}.
 
-prepare(Data, _From, StateData) ->
-   gen_fsm:send_all_state_event(self(), 'try'),
-	{reply, ok, main, StateData#state{post=Data}}.
+prepare(Data, From, StateData) ->
+   %io:format("Preparing 2~n",[]),
+   gen_fsm:reply(From, {ok, erlang:phash2(Data)}),
+	{next_state, main, StateData#state{post=Data}, sleep_time()}.
 
-main({timeout, _, _}, _From, StateData) ->
-	{reply, ignored, main, StateData};
-main(_Event, _From, StateData) ->
-	{reply, ignored, main, StateData}.
+main(_Event, From, StateData) -> % Try to post
+   io:format("Trying req : ~p on ~p~n",[erlang:phash2(StateData#state.post),StateData#state.next]),% TODO gen_even log
+   % random ok or ko
+   case ( rand:uniform() > 0.9 ) of % similate retries for now TODO
+                     true  -> io:format("OK     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
+                              gen_fsm:reply(From, {ok, erlang:phash2(StateData#state.post)}),
+                              {stop, normal, StateData} ;
+                     false -> io:format("KO     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
+                              NewStateData = StateData#state{next=server_pick(StateData#state.main)},
+	                           {next_state, main, NewStateData, sleep_time()}
+   end.
 
 backup({timeout, _, _}, _From, StateData) ->
 	{reply, ignored, backup, StateData};
@@ -144,7 +160,8 @@ handle_sync_event(_Event, _From, StateName, StateData) ->
 handle_info({'alive', Server }, StateName, StateData) ->
 	{next_state, StateName, StateData#state{next = Server}}.
 
-terminate(_Reason, _StateName, _StateData) ->
+terminate(_Reason, _StateName, StateData) ->
+   gen_server:cast(get(gs), {commit, erlang:phash2(StateData#state.post)}),
 	ok.
 
 code_change(_OldVsn, StateName, StateData, _Extra) ->
@@ -153,5 +170,25 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %===============================================================================
 
 server_pick(L) -> lists:sublist(L, rand:uniform(length(L)), 1).
+
+
+%% http_retries      : number of tries on same system (main / backup), then switch.
+%% http_basic_wait   : basic wait time
+%% http_random_wait  : basic random wait time 
+%% http_random_scale : random scale tuple  ex : {1,5} 
+%% 
+%% Timeout will be computed this way : 
+%% http_basic_wait + (http_random_wait * rand(http_random_scale))
+%% A randomly computed timeout avoid wave effects with huge number of requests
+%% at same time.
+sleep_time() -> HBW = get(hbw),
+                HRW = get(hrw),
+                {F, T} = get(hrs),
+                HRS = (F + (rand:uniform() * (T - F) )),
+                %io:format("~p / ~p / ~p~n",[HBW, HRW, HRS]),
+                % Return sleep time in milliseconds
+                S = (erlang:round(( HBW + (HRW * HRS))) * 1000) ,
+                %io:format("S = ~p~n",[S]),
+                S.  
 
 

@@ -30,6 +30,8 @@
 -export([stop/1]).
 
 start(_Type, _Args) ->
+   application:unload(be2bill),% To avoid password being stars at restart (DO NOT REMOVE)
+   application:load(be2bill),  % To avoid password being stars at restart (DO NOT REMOVE)
    application:start(crypto),
    ssl:start(),
    application:start(inets),

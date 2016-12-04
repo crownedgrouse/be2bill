@@ -394,6 +394,11 @@ handle_call(_Request, _From, State) ->
 	{reply, error, State}.
 
 %%******************************************************************************
+handle_cast({commit, ReqRef}, State) ->
+   io:format("Commit req : ~p~n", [ReqRef]), % TODO gen_even log
+   ok = dets:delete(get(store), ReqRef),
+	{noreply, State};
+
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
