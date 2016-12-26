@@ -1,5 +1,8 @@
 # be2bill Erlang API #
 
+
+Work in progress...
+
 ## Preamble ##
 This project offer the use of [be2bill](https://www.be2bill.com/en/) services 
 in [Erlang](http://www.erlang.org/) applications, mainly for Erlang CMS 
