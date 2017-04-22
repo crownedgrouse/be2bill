@@ -61,33 +61,42 @@
 %% API.
 
 -spec start_link(list()) -> {ok, pid()}.
-start_link(Env) ->
-	gen_fsm:start_link(?MODULE, Env, []).
+start_link(ConfigName) ->
+	gen_fsm:start_link(?MODULE, [ConfigName], []).
 
 %% gen_fsm.
 %%------------------------------------------------------------------------------
 %% 
 %%------------------------------------------------------------------------------
-init(Env) ->
+init([ConfigName]) ->
+	Env  = case lists:member(ConfigName, application:get_env(be2bill, prod_env, [])) of
+					 true  -> 'prod_env' ;
+					 false ->  case lists:member(ConfigName, application:get_env(be2bill, dev_env, [])) of
+										true -> 'dev_env' ;
+										false -> 'WTF' 
+								  end
+			  end,
    put(env, Env),
    % Disable any tracing/debugging of this process when production mode
    % This way sensitive data cannot be stolen at runtime.
    Sec = case Env of
-            'production' -> true ;
-            _            -> false 
+            'prod_env' -> true ;
+            'dev_env'  -> false ;
+            _          -> exit("Something weird. Internal environments can only be 'prod_env' or 'dev_env'.")
          end,
    erlang:process_flag(sensitive, Sec),
    % Compute list of IP available (dynamic as far we can change this at runtime)
-   Envs      = application:get_env(be2bill, Env, []),
+   Envs      = application:get_env(be2bill, ConfigName, []),
    NetEnv    = application:get_env(be2bill, list_to_atom(atom_to_list(Env) ++ "_net" ),[]),
    MainIps   = proplists:get_value('main_servers', NetEnv, []),
    BackupIps = proplists:get_value('backup_servers', NetEnv, []),
    Next      = server_pick(MainIps),
    HO        = proplists:get_value('http_options', Envs, []),
    O         = proplists:get_value('req_options', Envs, []),
-   GS        = case proplists:get_value('name', Envs, Env) of
+   GS        = case proplists:get_value('name', Envs, ConfigName) of
                     {local , Name} -> Name ;
-                    {global, Name} -> Name 
+                    {global, Name} -> Name ;
+                    Name -> Name 
                end,
    put(gs, GS), % My associated gen_server
    put(hbw,proplists:get_value('http_basic_wait',   Envs, application:get_env(be2bill, 'http_basic_wait'  , 5))),
@@ -114,7 +123,7 @@ main(_Event, StateData) ->
    % Try to post
    io:format("Trying req : ~p on ~p~n",[erlang:phash2(StateData#state.post),StateData#state.next]),% TODO gen_even log
    % random ok or ko
-   case ( rand:uniform() > 0.9  ) of % similate retries for now TODO
+   case ( rand:uniform() > 0.9  ) of % simulate retries for now TODO
                      true  -> io:format("OK     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
                               {stop, normal, StateData} ;
                      false -> io:format("KO     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
@@ -169,7 +178,8 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 
 %===============================================================================
 
-server_pick(L) -> lists:sublist(L, rand:uniform(length(L)), 1).
+server_pick([]) -> [];
+server_pick(L)  -> lists:sublist(L, rand:uniform(length(L)), 1).
 
 
 %% http_retries      : number of tries on same system (main / backup), then switch.

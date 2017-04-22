@@ -29,12 +29,12 @@
 -export([start_link/1]).
 -export([init/1]).
 
-start_link([Mode]) ->
-    supervisor:start_link(be2bill_simple_sup, Mode).
+start_link(ConfigName) ->
+    supervisor:start_link(be2bill_simple_sup, [ConfigName]).
 
-init(Mode) ->
+init([ConfigName]) ->
 
-    WorkerSpec = {be2bill_fsm, {be2bill_fsm, start_link, Mode}
+    WorkerSpec = {be2bill_fsm, {be2bill_fsm, start_link, [ConfigName]}
                  ,temporary
                  ,2000
                  ,worker

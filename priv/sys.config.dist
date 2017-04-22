@@ -1,6 +1,8 @@
 [
-{be2bill, [{env, both}   % both, production, sandbox
-          ,"production"
-          ,"sandbox"
+{be2bill, [{env, [dev_env, prod_env]}   %  
+          ,{dev_env, [sandbox]}
+          ,{prod_env, [production]}
           ]}
+,"production"
+,"sandbox"
 ].

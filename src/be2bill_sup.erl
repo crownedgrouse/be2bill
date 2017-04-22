@@ -34,13 +34,29 @@ start_link() ->
 
 init([]) ->
    SupFlags = {one_for_one, 1, 5},
-	Procs = [
-               {production, {be2bill_srv, start_link, [production]}, 
-                 permanent, brutal_kill, worker, [be2bill_srv]}
-              ,{sandbox,    {be2bill_srv, start_link, [sandbox]}, 
-                 permanent, brutal_kill, worker, [be2bill_srv]}
-            ],
-
+   % Check what environment type have to be started
+   Envs = application:get_env(be2bill, 'env'  , []),
+   % Dev
+	Devs = case lists:member('dev_env', Envs) of
+				   false -> [];
+					true  -> lists:map(fun(X) -> {X, {be2bill_srv, start_link, [X]}, 
+                                             permanent, 
+                                             brutal_kill, 
+                                             worker, [be2bill_srv]}
+                                  end, application:get_env(be2bill, 'dev_env'  , [])) 
+			 end,
+   % Prod
+	Prods = case lists:member('prod_env', Envs) of
+				   false -> [];
+					true  -> lists:map(fun(X) -> {X, {be2bill_srv, start_link, [X]}, 
+                                             permanent, 
+                                             brutal_kill, 
+                                             worker, [be2bill_srv]} 
+                                  end, application:get_env(be2bill, 'prod_env'  , [])) 
+			 end,
+	
+   % Start workers   
+	Procs = Devs ++ Prods ,
 	{ok, {SupFlags, Procs}}.
 
 

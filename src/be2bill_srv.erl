@@ -88,45 +88,45 @@
 %% API.
 -spec start_link(list()) -> {ok, pid()}.
 
-start_link(Env) ->
-    Envs = application:get_env(be2bill, Env, []),
-    Name = proplists:get_value('name', Envs, {local, Env}),
-    gen_server:start_link(Name, ?MODULE, Env, []).
+start_link(ConfigName) ->
+    Envs = application:get_env(be2bill, ConfigName, []),
+    Name = proplists:get_value('name', Envs, {local, ConfigName}),
+    gen_server:start_link(Name, ?MODULE, [ConfigName], []).
 
 %% gen_server.
 
 %%******************************************************************************
 %% Supervisor will start both production and sandbox env.
 %% Each server instance will decide to stop or start depending its own env config.
-init(Env) ->   
+init([ConfigName]) ->   
+	 Env  = case lists:member(ConfigName, application:get_env(be2bill, prod_env, [])) of
+					 true  -> 'prod_env' ;
+					 false ->  case lists:member(ConfigName, application:get_env(be2bill, dev_env, [])) of
+										true -> 'dev_env' ;
+										false -> 'WTF' 
+								  end
+			  end,
    % Disable any tracing/debugging of this process when production mode
    % This way sensitive data cannot be stolen at runtime.
    Sec = case Env of
-            'production' -> true ;
-            _            -> false 
+            'prod_env' -> true ;
+            'dev_env'  -> false ;
+            _          -> exit("Something weird. Internal environments can only be 'prod_env' or 'dev_env'.")
          end,
    erlang:process_flag(sensitive, Sec),
-   % Check in application config if current env can be used,
+   % Check in application config if current env type can be used,
    % otherwise stop cleanly
-   % env = [production, sandbox, both] Default to 'both'.
-   Start = case application:get_env(be2bill, env, both) of
-               both                 -> true ;
-               X when (Env =:= X)   -> true ;
-               _                    -> false
-        end,
+   Start = lists:member(Env, application:get_env(be2bill, env, [])),
    case Start of
       true ->  % Start the http supervisor under this gen_server, 
                % where http fsm will be dynamically added by this gen_server
-               Name = case Env of
-                           'production' -> {local, prod_fsm_sup} ;
-                           _            -> {local, sand_fsm_sup} 
-                      end,
-               update_config(Env),
-               {ok, HttpFsm} = supervisor:start_link(Name, be2bill_simplesup, [Env]),
+               Name = {local, list_to_atom(atom_to_list(ConfigName) ++ "_fsm_sup") },
+               update_config(ConfigName),
+               {ok, HttpFsm} = supervisor:start_link(Name, be2bill_simplesup, [ConfigName]),
                put(httpfsm, HttpFsm), %  Store PID
                % Open dets disc store (in priv/ directory if not set)
                DetsDir = application:get_env(be2bill, vault, code:priv_dir('be2bill')),
-               case dets:open_file(filename:join(DetsDir, atom_to_list(Env) ++ ".dets"), []) of
+               case dets:open_file(filename:join(DetsDir, atom_to_list(ConfigName) ++ ".dets"), []) of
                     {ok, Reference}  -> 
                          put(store, Reference),
                          % Resume stored requests (unfinished) TODO logging that some request are resumed
@@ -419,13 +419,13 @@ code_change(_OldVsn, State, _Extra) ->
 
 %%==============================================================================
 
-update_config(Env) when is_atom(Env)-> 
-    Envs = application:get_env(be2bill, Env, []),
+update_config(ConfName) when is_atom(ConfName)-> 
+    Envs = application:get_env(be2bill, ConfName, []),
     % Store locally, and hide password
     Password = proplists:get_value('password', Envs, ""),
     put('password', Password),
     New = proplists:delete('password', Envs),
-    application:set_env(be2bill, Env, New ++ [{'password', "*********"}]),
+    application:set_env(be2bill, ConfName, New ++ [{'password', "*********"}]),
     Id  = proplists:get_value('identifier', Envs, ""),
     put('identifier', Id),
     % Create main_servers/backup_servers list config   
@@ -434,6 +434,6 @@ update_config(Env) when is_atom(Env)->
     MainServers    = be2bill_netlib:pool2ips(MainPool),
     BackupServers  = be2bill_netlib:pool2ips(BackupPool),
     % Set Ips per environment in config at runtime
-    ok= application:set_env(be2bill, list_to_atom(atom_to_list(Env) ++ "_net" ) , [{main_servers, MainServers}, {backup_servers, BackupServers}]),
+    ok= application:set_env(be2bill, list_to_atom(atom_to_list(ConfName) ++ "_net" ) , [{main_servers, MainServers}, {backup_servers, BackupServers}]),
 
     ok.
