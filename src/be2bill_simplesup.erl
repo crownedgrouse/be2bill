@@ -33,8 +33,11 @@ start_link(ConfigName) ->
     supervisor:start_link(be2bill_simple_sup, [ConfigName]).
 
 init([ConfigName]) ->
-
-    WorkerSpec = {be2bill_fsm, {be2bill_fsm, start_link, [ConfigName]}
+    FSM = case code:is_loaded(gen_statem) of
+		false -> {be2bill_fsm, start_link, [ConfigName]};
+		_     -> {be2bill_statem, start_link, [ConfigName]}
+	  end,
+    WorkerSpec = {be2bill_fsm, FSM
                  ,temporary
                  ,2000
                  ,worker

@@ -22,21 +22,16 @@
 %%%
 %%% Created : 2016-10-16
 %%%-----------------------------------------------------------------------------
--module(be2bill_fsm).
--behaviour(gen_fsm).
+-module(be2bill_statem).
+-behaviour(gen_statem).
 
 %% API.
 -export([start_link/1]).
 
-%% gen_fsm.
--export([init/1]).
+%% gen_statem.
+-export([terminate/3,code_change/4,init/1,callback_mode/0]).
 -export([prepare/2, main/2, backup/2]).
--export([handle_event/3]).
 -export([prepare/3, main/3, backup/3]).
--export([handle_sync_event/4]).
--export([handle_info/3]).
--export([terminate/3]).
--export([code_change/4]).
 
 -include("be2bill_statem.hrl").
 
@@ -44,9 +39,13 @@
 
 -spec start_link(list()) -> {ok, pid()}.
 start_link(ConfigName) ->
-	gen_fsm:start_link(?MODULE, [ConfigName], []).
+	gen_statem:start_link(?MODULE, [ConfigName], []).
 
-%% gen_fsm.
+
+callback_mode() ->
+    state_functions.
+
+%% gen_statem.
 %%------------------------------------------------------------------------------
 %%
 %%------------------------------------------------------------------------------
@@ -87,7 +86,7 @@ init([ConfigName]) ->
 	{ok, prepare, #state{next=Next, http_options=HO, options=O, main=MainIps, backup=BackupIps}}.
 
 %%------------------------------------------------------------------------------
-%% Each http request will be handled by an individual gen_fsm.
+%% Each http request will be handled by an individual gen_statem.
 %% Each http request will be retried several times on main system,
 %% then tried several times on backup system.
 %% When a request is OK on a server (after a first error),
@@ -117,39 +116,28 @@ backup(_Event, StateData) ->
    NextState = todo,
 	{next_state, NextState, StateData}.
 
-% Synchonous
-handle_event(Event, StateName, StateData) ->
-   io:format("~p received : ~p~n",[self(), Event]),
-   {next_state, StateName, StateData}.
 
-prepare(Data, From, StateData) ->
+prepare({call, From}, Data, StateData) ->
    %io:format("Preparing 2~n",[]),
-   gen_fsm:reply(From, {ok, erlang:phash2(Data)}),
+   gen_statem:reply(From, {ok, erlang:phash2(Data)}),
 	{next_state, main, StateData#state{post=Data}, sleep_time()}.
 
-main(_Event, From, StateData) -> % Try to post
+main({call, From}, _Event, StateData) -> % Try to post
    io:format("Trying req : ~p on ~p~n",[erlang:phash2(StateData#state.post),StateData#state.next]),% TODO gen_even log
    % random ok or ko
    case ( rand:uniform() > 0.9 ) of % simulate retries for now TODO
                      true  -> io:format("OK     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
-                              gen_fsm:reply(From, {ok, erlang:phash2(StateData#state.post)}),
+                              gen_statem:reply(From, {ok, erlang:phash2(StateData#state.post)}),
                               {stop, normal, StateData} ;
                      false -> io:format("KO     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
                               NewStateData = StateData#state{next=server_pick(StateData#state.main)},
 	                           {next_state, main, NewStateData, sleep_time()}
    end.
 
-backup({timeout, _, _}, _From, StateData) ->
+backup({call, From},{timeout, _, _}, StateData) ->
 	{reply, ignored, backup, StateData};
-backup(_Event, _From, StateData) ->
+backup(_From, _Event, StateData) ->
 	{reply, ignored, backup, StateData}.
-
-handle_sync_event(_Event, _From, StateName, StateData) ->
-	{reply, ignored, StateName, StateData}.
-
-%% Receive info from others that a server is ok
-handle_info({'alive', Server }, StateName, StateData) ->
-	{next_state, StateName, StateData#state{next = Server}}.
 
 terminate(_Reason, _StateName, StateData) ->
    gen_server:cast(get(gs), {commit, erlang:phash2(StateData#state.post)}),
