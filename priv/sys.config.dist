@@ -3,6 +3,6 @@
           ,{dev_env, [sandbox]}
           ,{prod_env, [production]}
           ]}
-,"production"
-,"sandbox"
+,"releases/1/production" % relative path to cwd for release
+,"releases/1/sandbox"    % to be changed for manual start with -config option 
 ].
