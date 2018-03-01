@@ -102,16 +102,8 @@ prepare(Data, StateData) ->
 
 
 main(_Event, StateData) ->
-   % Try to post
-   io:format("Trying req : ~p on ~p~n",[erlang:phash2(StateData#state.post),StateData#state.next]),% TODO gen_even log
-   % random ok or ko
-   case ( rand:uniform() > 0.9  ) of % simulate retries for now TODO
-                     true  -> io:format("OK     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
-                              {stop, normal, StateData} ;
-                     false -> io:format("KO     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
-                              NewStateData = StateData#state{next=server_pick(StateData#state.main)},
-	                           {next_state, main, NewStateData, sleep_time()}
-   end.
+   erlang:display("Sorry, please use gen_server:call/2 ."),
+   {stop, normal, StateData}.
 
 backup(_Event, StateData) ->
    NextState = todo,
@@ -123,18 +115,18 @@ handle_event(Event, StateName, StateData) ->
    {next_state, StateName, StateData}.
 
 prepare(Data, From, StateData) ->
-   %io:format("Preparing 2~n",[]),
-   gen_fsm:reply(From, {ok, erlang:phash2(Data)}),
-	{next_state, main, StateData#state{post=Data}, sleep_time()}.
+   ID = erlang:phash2(Data),
+   gen_fsm:reply(From, {ok, ID}),
+	{next_state, main, StateData#state{id= ID, post=Data}, sleep_time()}.
 
 main(_Event, From, StateData) -> % Try to post
-   io:format("Trying req : ~p on ~p~n",[erlang:phash2(StateData#state.post),StateData#state.next]),% TODO gen_even log
+   io:format("Trying req : ~p on ~p~n",[StateData#state.id,StateData#state.next]),% TODO gen_even log
    % random ok or ko
    case ( rand:uniform() > 0.9 ) of % simulate retries for now TODO
-                     true  -> io:format("OK     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
-                              gen_fsm:reply(From, {ok, erlang:phash2(StateData#state.post)}),
+                     true  -> io:format("OK     req : ~p~n",[StateData#state.id]),% TODO gen_even log
+                              gen_fsm:reply(From, {ok, StateData#state.id}),
                               {stop, normal, StateData} ;
-                     false -> io:format("KO     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
+                     false -> io:format("KO     req : ~p~n",[StateData#state.id]),% TODO gen_even log
                               NewStateData = StateData#state{next=server_pick(StateData#state.main)},
 	                           {next_state, main, NewStateData, sleep_time()}
    end.

@@ -6,7 +6,8 @@
 -type ip_address() :: ip4_address() | ip6_address().
 
 -record(state,
-{next   = undefined :: undefined | ip_address() % the server to be tried next time
+{id     = 0   :: non_neg_integer()              % Id of request
+,next   = undefined :: undefined | ip_address() % the server to be tried next time
 ,server = undefined :: undefined | ip_address() % the last server being tried
 ,tries  = 0   :: non_neg_integer()              % current number of tries
 ,status = 0   :: non_neg_integer()              % Http code received

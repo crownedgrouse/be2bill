@@ -101,16 +101,8 @@ prepare(Data, StateData) ->
 
 
 main(_Event, StateData) ->
-   % Try to post
-   io:format("Trying req : ~p on ~p~n",[erlang:phash2(StateData#state.post),StateData#state.next]),% TODO gen_even log
-   % random ok or ko
-   case ( rand:uniform() > 0.9  ) of % simulate retries for now TODO
-                     true  -> io:format("OK     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
-                              {stop, normal, StateData} ;
-                     false -> io:format("KO     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
-                              NewStateData = StateData#state{next=server_pick(StateData#state.main)},
-	                           {next_state, main, NewStateData, sleep_time()}
-   end.
+   erlang:display("Sorry, please use gen_server:call/2 ."),
+   {stop, normal, StateData}.
 
 backup(_Event, StateData) ->
    NextState = todo,
@@ -118,29 +110,29 @@ backup(_Event, StateData) ->
 
 
 prepare({call, From}, Data, StateData) ->
-   %io:format("Preparing 2~n",[]),
-   gen_statem:reply(From, {ok, erlang:phash2(Data)}),
-	{next_state, main, StateData#state{post=Data}, sleep_time()}.
+   ID = erlang:phash2(Data),
+   gen_statem:reply(From, {ok, ID}),
+	{next_state, main, StateData#state{id= ID, post=Data}, sleep_time()}.
 
-main({call, From}, _Event, StateData) -> % Try to post
-   io:format("Trying req : ~p on ~p~n",[erlang:phash2(StateData#state.post),StateData#state.next]),% TODO gen_even log
+main(_Call, _Event, StateData) -> % Try to post
+   io:format("Trying req : ~p on ~p~n",[StateData#state.id, StateData#state.next]),% TODO gen_even log
    % random ok or ko
-   case ( rand:uniform() > 0.9 ) of % simulate retries for now TODO
-                     true  -> io:format("OK     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
-                              gen_statem:reply(From, {ok, erlang:phash2(StateData#state.post)}),
+   Ret = case ( rand:uniform() > 0.9 ) of % simulate retries for now TODO
+                     true  -> io:format("OK     req : ~p~n",[StateData#state.id]),% TODO gen_even log
                               {stop, normal, StateData} ;
-                     false -> io:format("KO     req : ~p~n",[erlang:phash2(StateData#state.post)]),% TODO gen_even log
+                     false -> io:format("KO     req : ~p~n",[StateData#state.id]),% TODO gen_even log
                               NewStateData = StateData#state{next=server_pick(StateData#state.main)},
-	                           {next_state, main, NewStateData, sleep_time()}
-   end.
+                              {next_state, main, NewStateData, sleep_time()}
+         end,
+   Ret.
 
-backup({call, From},{timeout, _, _}, StateData) ->
+backup(timeout, _ , StateData) ->
 	{reply, ignored, backup, StateData};
 backup(_From, _Event, StateData) ->
 	{reply, ignored, backup, StateData}.
 
 terminate(_Reason, _StateName, StateData) ->
-   gen_server:cast(get(gs), {commit, erlang:phash2(StateData#state.post)}),
+   gen_server:cast(get(gs), {commit, StateData#state.id}),
 	ok.
 
 code_change(_OldVsn, StateName, StateData, _Extra) ->
