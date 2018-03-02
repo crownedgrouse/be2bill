@@ -111,7 +111,7 @@ backup(_Event, StateData) ->
 
 % Synchonous
 handle_event(Event, StateName, StateData) ->
-   io:format("~p received : ~p~n",[self(), Event]),
+   %io:format("~p received : ~p~n",[self(), Event]),
    {next_state, StateName, StateData}.
 
 prepare(Data, From, StateData) ->
@@ -120,7 +120,7 @@ prepare(Data, From, StateData) ->
 	{next_state, main, StateData#state{id= ID, post=Data}, sleep_time()}.
 
 main(_Event, From, StateData) -> % Try to post
-   io:format("Trying req : ~p on ~p~n",[StateData#state.id,StateData#state.next]),% TODO gen_even log
+   %io:format("Trying req : ~p on ~p~n",[StateData#state.id,StateData#state.next]),% TODO gen_even log
    % random ok or ko
    case ( rand:uniform() > 0.9 ) of % simulate retries for now TODO
                      true  -> io:format("OK     req : ~p~n",[StateData#state.id]),% TODO gen_even log
@@ -149,30 +149,5 @@ terminate(_Reason, _StateName, StateData) ->
 
 code_change(_OldVsn, StateName, StateData, _Extra) ->
 	{ok, StateName, StateData}.
-
-%===============================================================================
-
-server_pick([]) -> [];
-server_pick(L)  -> lists:sublist(L, rand:uniform(length(L)), 1).
-
-
-%% http_retries      : number of tries on same system (main / backup), then switch.
-%% http_basic_wait   : basic wait time
-%% http_random_wait  : basic random wait time
-%% http_random_scale : random scale tuple  ex : {1,5}
-%%
-%% Timeout will be computed this way :
-%% http_basic_wait + (http_random_wait * rand(http_random_scale))
-%% A randomly computed timeout avoid wave effects with huge number of requests
-%% at same time.
-sleep_time() -> HBW = get(hbw),
-                HRW = get(hrw),
-                {F, T} = get(hrs),
-                HRS = (F + (rand:uniform() * (T - F) )),
-                %io:format("~p / ~p / ~p~n",[HBW, HRW, HRS]),
-                % Return sleep time in milliseconds
-                S = (erlang:round(( HBW + (HRW * HRS))) * 1000) ,
-                %io:format("S = ~p~n",[S]),
-                S.
 
 

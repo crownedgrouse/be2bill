@@ -73,17 +73,17 @@
 % Common treatment to all methods
 -define(COMMON(R, Store),
    case be2bill_lib:check_record(R) of
-      {error, Err} -> {error, Err} ;
-      {ok, Ok}     ->
-                     % Add dynamic http fsm to handle the request
-                     {ok, Child} = supervisor:start_child(get(httpfsm), []),
-                     Password = get('password'),
-                     {ok, Post} = be2bill_lib:compute_post(Ok, Password),
-                     case Store of
-                           true -> true = dets:insert_new(get(store), { erlang:phash2(Post), Post}) ;
-                           _    -> ok
-                     end,
-                     finite_state(Child, Post)
+      {_, {error, Err}} -> {error, Err} ;
+      {N, {ok, Ok}}     ->
+                           % Add dynamic http fsm to handle the request
+                           {ok, Child} = supervisor:start_child(get(httpfsm), []),
+                           Password = get('password'),
+                           {ok, Post} = be2bill_lib:compute_post({N, Ok}, Password),
+                           case Store of
+                                 true -> true = dets:insert_new(get(store), { erlang:phash2(Post), Post}) ;
+                                 _    -> ok
+                           end,
+                           finite_state(Child, Post)
    end
 ).
 
